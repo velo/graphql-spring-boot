@@ -23,4 +23,5 @@ type Query {
 
 type Mutation {
     uploadFiles(files: [Upload]!): [String!]
+    uploadFile(file: Upload): String!
 }

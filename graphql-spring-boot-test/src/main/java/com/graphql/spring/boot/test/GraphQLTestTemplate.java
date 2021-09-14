@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntFunction;
 import lombok.Getter;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -313,24 +314,36 @@ public class GraphQLTestTemplate {
    * will be a part of multipart request. GraphQL Servlet will use <i>map</i> part to walk through
    * variables.files and validate the request in combination with other binary file parts
    *
-   * <p>-------------- request beginning ---------------
+   * <p>----------------------------dummyid
    *
-   * <p>operations: { "query": "mutation($files:[Upload]!) {uploadFiles(files:$files)}",
-   * "operationName": "uploadFiles", "variables": { "files": [null, null] } }
+   * <p>Content-Disposition: form-data; name="operations"
    *
-   * <p>-----------------------------------------------
+   * <p>{ "query": "mutation($files:[Upload]!) {uploadFiles(files:$files)}", "operationName":
+   * "uploadFiles", "variables": { "files": [null, null] } }
+   *
+   * <p>----------------------------dummyid
+   *
+   * <p>Content-Disposition: form-data; name="map"
    *
    * <p>map: { "1":["variables.files.0"], "2":["variables.files.1"] }
    *
-   * <p>-----------------------------------------------
+   * <p>----------------------------dummyid
    *
-   * <p>1: --file 1 binary code--
+   * <p>Content-Disposition: form-data; name="1"; filename="file1.pdf"
    *
-   * <p>-----------------------------------------------
+   * <p>Content-Type: application/octet-stream
+   *
+   * <p>--file 1 binary code--
+   *
+   * <p>----------------------------dummyid
+   *
+   * <p>Content-Disposition: form-data; name="2"; filename="file2.pdf"
+   *
+   * <p>Content-Type: application/octet-stream
    *
    * <p>2: --file 2 binary code--
    *
-   * <p>-------------- request end ---------------------
+   * <p>
    *
    * @param graphqlResource path to the classpath resource containing the GraphQL query
    * @param variables the input variables for the GraphQL query
@@ -344,12 +357,39 @@ public class GraphQLTestTemplate {
       String graphqlResource, ObjectNode variables, List<ClassPathResource> files)
       throws IOException {
 
+    return postFiles(
+        graphqlResource, variables, files, index -> String.format("variables.files.%d", index));
+  }
+
+  /**
+   * Handle the multipart files upload request to GraphQL servlet
+   *
+   * @param graphqlResource path to the classpath resource containing the GraphQL query
+   * @param variables the input variables for the GraphQL query
+   * @param files ClassPathResource instance for each file that will be uploaded to GraphQL server.
+   *     When Spring RestTemplate processes the request, it will automatically produce a valid part
+   *     representing given file inside multipart request (including size, submittedFileName, etc.)
+   * @param pathFunc function to generate the path to file inside variables. For example:
+   *     <ul>
+   *       <li>index -> String.format("variables.files.%d", index) for multiple files
+   *       <li>index -> "variables.file" for single file
+   *     </ul>
+   *
+   * @return {@link GraphQLResponse} containing the result of query execution
+   * @throws IOException if the resource cannot be loaded from the classpath
+   */
+  public GraphQLResponse postFiles(
+      String graphqlResource,
+      ObjectNode variables,
+      List<ClassPathResource> files,
+      IntFunction<String> pathFunc)
+      throws IOException {
     MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
     MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
 
     for (int i = 0; i < files.size(); i++) {
       String valueKey = String.valueOf(i + 1); // map value and part index starts at 1
-      map.add(valueKey, String.format("variables.files.%d", i));
+      map.add(valueKey, pathFunc.apply(i));
 
       values.add(valueKey, files.get(i));
     }

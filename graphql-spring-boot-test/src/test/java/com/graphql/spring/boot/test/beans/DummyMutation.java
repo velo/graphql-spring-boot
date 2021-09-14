@@ -24,4 +24,9 @@ public class DummyMutation implements GraphQLMutationResolver {
     List<Part> actualFiles = env.getArgument("files");
     return actualFiles.stream().map(Part::getSubmittedFileName).collect(Collectors.toList());
   }
+
+  public String uploadFile(Part file, DataFetchingEnvironment env) {
+    Part actualFile = env.getArgument("file");
+    return actualFile.getSubmittedFileName();
+  }
 }

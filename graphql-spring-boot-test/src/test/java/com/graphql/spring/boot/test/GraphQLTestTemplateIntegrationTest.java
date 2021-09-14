@@ -31,11 +31,13 @@ class GraphQLTestTemplateIntegrationTest {
   private static final String QUERY_WITH_VARIABLES = "query-with-variables.graphql";
   private static final String COMPLEX_TEST_QUERY = "complex-query.graphql";
   private static final String MULTIPLE_QUERIES = "multiple-queries.graphql";
-  private static final String UPLOAD_MUTATION = "upload-files.graphql";
+  private static final String UPLOAD_FILES_MUTATION = "upload-files.graphql";
+  private static final String UPLOAD_FILE_MUTATION = "upload-file.graphql";
   private static final String INPUT_STRING_VALUE = "input-value";
   private static final String INPUT_STRING_NAME = "input";
   private static final String INPUT_HEADER_NAME = "headerName";
   private static final String FILES_STRING_NAME = "files";
+  private static final String UPLOADING_FILE_STRING_NAME = "uploadingFile";
   private static final String TEST_HEADER_NAME = "x-test";
   private static final String TEST_HEADER_VALUE = String.valueOf(UUID.randomUUID());
   private static final String FOO = "FOO";
@@ -47,6 +49,7 @@ class GraphQLTestTemplateIntegrationTest {
   private static final String DATA_FIELD_QUERY_WITH_HEADER = "$.data.queryWithHeader";
   private static final String DATA_FIELD_DUMMY = "$.data.dummy";
   private static final String DATA_FILE_UPLOAD_FILES = "$.data.uploadFiles";
+  private static final String DATA_FILE_UPLOAD_FILE = "$.data.uploadFile";
   private static final String OPERATION_NAME_WITH_VARIABLES = "withVariable";
   private static final String OPERATION_NAME_TEST_QUERY_1 = "testQuery1";
   private static final String OPERATION_NAME_TEST_QUERY_2 = "testQuery2";
@@ -246,10 +249,29 @@ class GraphQLTestTemplateIntegrationTest {
         fileNames.stream().map(ClassPathResource::new).collect(Collectors.toList());
     // WHEN - THEN
     graphQLTestTemplate
-        .postFiles(UPLOAD_MUTATION, variables, testUploadFiles)
+        .postFiles(UPLOAD_FILES_MUTATION, variables, testUploadFiles)
         .assertThatNoErrorsArePresent()
         .assertThatField(DATA_FILE_UPLOAD_FILES)
         .asListOf(String.class)
         .isEqualTo(fileNames);
+  }
+
+  @Test
+  @DisplayName("Test perform with individual file upload and custom path.")
+  void testPerformWithIndividualFileUpload() throws IOException {
+    // GIVEN
+    final ObjectNode variables = objectMapper.createObjectNode();
+    variables.put(UPLOADING_FILE_STRING_NAME, objectMapper.valueToTree(null));
+
+    List<String> fileNames = List.of("multiple-queries.graphql");
+    List<ClassPathResource> testUploadFiles =
+        fileNames.stream().map(ClassPathResource::new).collect(Collectors.toList());
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postFiles(UPLOAD_FILE_MUTATION, variables, testUploadFiles, index -> "variables.file")
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FILE_UPLOAD_FILE)
+        .asString()
+        .isEqualTo(fileNames.get(0));
   }
 }
