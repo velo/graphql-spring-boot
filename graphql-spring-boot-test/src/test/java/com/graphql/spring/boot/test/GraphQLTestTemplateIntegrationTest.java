@@ -1,18 +1,23 @@
 package com.graphql.spring.boot.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.graphql.spring.boot.test.beans.FooBar;
 import graphql.GraphQLError;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
 
@@ -26,9 +31,11 @@ class GraphQLTestTemplateIntegrationTest {
   private static final String QUERY_WITH_VARIABLES = "query-with-variables.graphql";
   private static final String COMPLEX_TEST_QUERY = "complex-query.graphql";
   private static final String MULTIPLE_QUERIES = "multiple-queries.graphql";
+  private static final String UPLOAD_MUTATION = "upload-files.graphql";
   private static final String INPUT_STRING_VALUE = "input-value";
   private static final String INPUT_STRING_NAME = "input";
   private static final String INPUT_HEADER_NAME = "headerName";
+  private static final String FILES_STRING_NAME = "files";
   private static final String TEST_HEADER_NAME = "x-test";
   private static final String TEST_HEADER_VALUE = String.valueOf(UUID.randomUUID());
   private static final String FOO = "FOO";
@@ -39,6 +46,7 @@ class GraphQLTestTemplateIntegrationTest {
   private static final String DATA_FIELD_OTHER_QUERY = "$.data.otherQuery";
   private static final String DATA_FIELD_QUERY_WITH_HEADER = "$.data.queryWithHeader";
   private static final String DATA_FIELD_DUMMY = "$.data.dummy";
+  private static final String DATA_FILE_UPLOAD_FILES = "$.data.uploadFiles";
   private static final String OPERATION_NAME_WITH_VARIABLES = "withVariable";
   private static final String OPERATION_NAME_TEST_QUERY_1 = "testQuery1";
   private static final String OPERATION_NAME_TEST_QUERY_2 = "testQuery2";
@@ -223,5 +231,25 @@ class GraphQLTestTemplateIntegrationTest {
         .assertThatField(DATA_FIELD_QUERY_WITH_HEADER)
         .asString()
         .isEqualTo(TEST_HEADER_VALUE);
+  }
+
+  @Test
+  @DisplayName("Test perform with file uploads.")
+  void testPerformWithFileUploads() throws IOException {
+    // GIVEN
+    final ObjectNode variables = objectMapper.createObjectNode();
+    ArrayNode nodes = objectMapper.valueToTree(Arrays.asList(null, null));
+    variables.putArray(FILES_STRING_NAME).addAll(nodes);
+
+    List<String> fileNames = List.of("multiple-queries.graphql", "simple-test-query.graphql");
+    List<ClassPathResource> testUploadFiles =
+        fileNames.stream().map(ClassPathResource::new).collect(Collectors.toList());
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postFiles(UPLOAD_MUTATION, variables, testUploadFiles)
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FILE_UPLOAD_FILES)
+        .asListOf(String.class)
+        .isEqualTo(fileNames);
   }
 }

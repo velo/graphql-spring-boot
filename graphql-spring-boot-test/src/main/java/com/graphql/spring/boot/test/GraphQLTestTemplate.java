@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpEntity;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
 
@@ -239,13 +241,23 @@ public class GraphQLTestTemplate {
       ObjectNode variables,
       List<String> fragmentResources)
       throws IOException {
+    String payload = getPayload(graphqlResource, operationName, variables, fragmentResources);
+    return post(payload);
+  }
+
+  /** Generate GraphQL payload, which consist of 3 elements: query, operationName and variables */
+  private String getPayload(
+      String graphqlResource,
+      String operationName,
+      ObjectNode variables,
+      List<String> fragmentResources)
+      throws IOException {
     StringBuilder sb = new StringBuilder();
     for (String fragmentResource : fragmentResources) {
       sb.append(loadQuery(fragmentResource));
     }
     String graphql = sb.append(loadQuery(graphqlResource)).toString();
-    String payload = createJsonQuery(graphql, operationName, variables);
-    return post(payload);
+    return createJsonQuery(graphql, operationName, variables);
   }
 
   /**
@@ -277,6 +289,76 @@ public class GraphQLTestTemplate {
 
   public GraphQLResponse postMultipart(String query, String variables) {
     return postRequest(RequestFactory.forMultipart(query, variables, headers));
+  }
+
+  /**
+   * Handle the multipart files upload request to GraphQL servlet
+   *
+   * <p>In contrast with usual the GraphQL request with body as json payload (consist of query,
+   * operationName and variables), multipart file upload request will use multipart/form-data body
+   * with the following structure:
+   *
+   * <ul>
+   *   <li><b>operations</b> the payload that we used to use for the normal GraphQL request
+   *   <li><b>map</b> a map for referencing between one part of multi-part request and the
+   *       corresponding <i>Upload</i> element inside <i>variables</i>
+   *   <li>a consequence of upload files embedded into the multi-part request, keyed as numeric
+   *       number starting from 1, valued as File payload of usual multipart file upload
+   * </ul>
+   *
+   * <p>Example uploading two files:
+   *
+   * <p>* Please note that we can't embed binary data into json. Clients library supporting graphql
+   * file upload will set variable.files to null for every element inside the array, but each file
+   * will be a part of multipart request. GraphQL Servlet will use <i>map</i> part to walk through
+   * variables.files and validate the request in combination with other binary file parts
+   *
+   * <p>-------------- request beginning ---------------
+   *
+   * <p>operations: { "query": "mutation($files:[Upload]!) {uploadFiles(files:$files)}",
+   * "operationName": "uploadFiles", "variables": { "files": [null, null] } }
+   *
+   * <p>-----------------------------------------------
+   *
+   * <p>map: { "1":["variables.files.0"], "2":["variables.files.1"] }
+   *
+   * <p>-----------------------------------------------
+   *
+   * <p>1: --file 1 binary code--
+   *
+   * <p>-----------------------------------------------
+   *
+   * <p>2: --file 2 binary code--
+   *
+   * <p>-------------- request end ---------------------
+   *
+   * @param graphqlResource path to the classpath resource containing the GraphQL query
+   * @param variables the input variables for the GraphQL query
+   * @param files ClassPathResource instance for each file that will be uploaded to GraphQL server.
+   *     When Spring RestTemplate processes the request, it will automatically produce a valid part
+   *     representing given file inside multipart request (including size, submittedFileName, etc.)
+   * @return {@link GraphQLResponse} containing the result of query execution
+   * @throws IOException if the resource cannot be loaded from the classpath
+   */
+  public GraphQLResponse postFiles(
+      String graphqlResource, ObjectNode variables, List<ClassPathResource> files)
+      throws IOException {
+
+    MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+    MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+
+    for (int i = 0; i < files.size(); i++) {
+      String valueKey = String.valueOf(i + 1); // map value and part index starts at 1
+      map.add(valueKey, String.format("variables.files.%d", i));
+
+      values.add(valueKey, files.get(i));
+    }
+
+    String payload = getPayload(graphqlResource, null, variables, Collections.emptyList());
+    values.add("operations", payload);
+    values.add("map", map);
+
+    return postRequest(RequestFactory.forMultipart(values, headers));
   }
 
   /**
