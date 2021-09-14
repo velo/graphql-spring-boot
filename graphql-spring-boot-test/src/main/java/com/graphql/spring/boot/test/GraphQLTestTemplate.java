@@ -246,7 +246,17 @@ public class GraphQLTestTemplate {
     return post(payload);
   }
 
-  /** Generate GraphQL payload, which consist of 3 elements: query, operationName and variables */
+  /**
+   * Generate GraphQL payload, which consist of 3 elements: query, operationName and variables
+   *
+   * @param graphqlResource path to the classpath resource containing the GraphQL query
+   * @param operationName the name of the GraphQL operation to be executed
+   * @param variables the input variables for the GraphQL query
+   * @param fragmentResources an ordered list of classpath resources containing GraphQL fragment
+   *     definitions.
+   * @return the payload
+   * @throws IOException if the resource cannot be loaded from the classpath
+   */
   private String getPayload(
       String graphqlResource,
       String operationName,
