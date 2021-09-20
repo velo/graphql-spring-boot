@@ -49,8 +49,6 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
-    group "$PROJECT_GROUP"
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -146,6 +144,7 @@ subprojects {
         publications {
             mavenJava(MavenPublication) {
                 if (project.name != bomProjectName) {
+                    version version
                     from components.java
                 }
 
