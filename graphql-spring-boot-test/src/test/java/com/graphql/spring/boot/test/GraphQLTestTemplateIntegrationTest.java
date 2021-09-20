@@ -244,7 +244,7 @@ class GraphQLTestTemplateIntegrationTest {
     ArrayNode nodes = objectMapper.valueToTree(Arrays.asList(null, null));
     variables.putArray(FILES_STRING_NAME).addAll(nodes);
 
-    List<String> fileNames = List.of("multiple-queries.graphql", "simple-test-query.graphql");
+    List<String> fileNames = Arrays.asList("multiple-queries.graphql", "simple-test-query.graphql");
     List<ClassPathResource> testUploadFiles =
         fileNames.stream().map(ClassPathResource::new).collect(Collectors.toList());
     // WHEN - THEN
@@ -263,7 +263,7 @@ class GraphQLTestTemplateIntegrationTest {
     final ObjectNode variables = objectMapper.createObjectNode();
     variables.put(UPLOADING_FILE_STRING_NAME, objectMapper.valueToTree(null));
 
-    List<String> fileNames = List.of("multiple-queries.graphql");
+    List<String> fileNames = Arrays.asList("multiple-queries.graphql");
     List<ClassPathResource> testUploadFiles =
         fileNames.stream().map(ClassPathResource::new).collect(Collectors.toList());
     // WHEN - THEN
