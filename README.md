@@ -193,29 +193,30 @@ Available Spring Boot configuration parameters (either `application.yml`
 or `application.properties`):
 
 ```yaml
-graphiql:
-  mapping: /graphiql
-  endpoint:
-    graphql: /graphql
-    subscriptions: /subscriptions
-  subscriptions:
-    timeout: 30
-    reconnect: false
-  basePath: /
-  enabled: true
-  pageTitle: GraphiQL
-  cdn:
-    enabled: false
-    version: latest
-  props:
-    resources:
-      query: query.graphql
-      defaultQuery: defaultQuery.graphql
-      variables: variables.graphql
-    variables:
-      editorTheme: "solarized light"
-  headers:
-    Authorization: "Bearer <your-token>"
+graphql:
+  graphiql:
+    mapping: /graphiql
+    endpoint:
+      graphql: /graphql
+      subscriptions: /subscriptions
+    subscriptions:
+      timeout: 30
+      reconnect: false
+    basePath: /
+    enabled: true
+    pageTitle: GraphiQL
+    cdn:
+      enabled: false
+      version: latest
+    props:
+      resources:
+        query: query.graphql
+        defaultQuery: defaultQuery.graphql
+        variables: variables.json
+      variables:
+        editorTheme: "solarized light"
+    headers:
+      Authorization: "Bearer <your-token>"
 ```
 
 By default GraphiQL is served from within the package. This can be configured to be served from CDN

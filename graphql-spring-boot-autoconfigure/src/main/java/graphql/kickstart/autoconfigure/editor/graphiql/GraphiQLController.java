@@ -1,20 +1,24 @@
 package graphql.kickstart.autoconfigure.editor.graphiql;
 
+import static java.util.Objects.nonNull;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import graphql.kickstart.autoconfigure.editor.PropertyGroupReader;
-import graphql.kickstart.autoconfigure.editor.PropsLoader;
+import graphql.kickstart.autoconfigure.editor.graphiql.GraphiQLProperties.Props.GraphiQLVariables;
+import graphql.kickstart.autoconfigure.editor.graphiql.GraphiQLProperties.Resources;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.util.StreamUtils;
@@ -23,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** @author Andrew Potter */
 @Slf4j
+@RequiredArgsConstructor
 public abstract class GraphiQLController {
 
   private static final String CDNJS_CLOUDFLARE_COM_AJAX_LIBS = "//cdnjs.cloudflare.com/ajax/libs/";
@@ -30,18 +35,14 @@ public abstract class GraphiQLController {
   private static final String GRAPHIQL = "graphiql";
   private static final String FAVICON_GRAPHQL_ORG = "//graphql.org/img/favicon.png";
 
-  @Autowired private Environment environment;
-
-  @Autowired private GraphiQLProperties graphiQLProperties;
+  private final GraphiQLProperties graphiQLProperties;
 
   private String template;
   private String props;
-  private Properties headerProperties;
 
   public void onceConstructed() throws IOException {
     loadTemplate();
     loadProps();
-    loadHeaders();
   }
 
   private void loadTemplate() throws IOException {
@@ -52,35 +53,45 @@ public abstract class GraphiQLController {
   }
 
   private void loadProps() throws IOException {
-    props =
-        new PropsLoader(environment, "graphiql.props.resources.", "graphiql.props.variables.")
-            .load();
-  }
-
-  private void loadHeaders() {
-    PropertyGroupReader propertyReader = new PropertyGroupReader(environment, "graphiql.headers.");
-    headerProperties = propertyReader.load();
+    Resources resources = graphiQLProperties.getProps().getResources();
+    GraphiQLVariables combinedVariables = graphiQLProperties.getProps().getVariables();
+    if (nonNull(resources.getVariables())) {
+      combinedVariables = combinedVariables.withVariables(getContent(resources.getVariables()));
+    }
+    if (nonNull(resources.getDefaultQuery())) {
+      combinedVariables
+          = combinedVariables.withDefaultQuery(getContent(resources.getDefaultQuery()));
+    }
+    if (nonNull(resources.getQuery())) {
+      combinedVariables = combinedVariables.withQuery(getContent(resources.getQuery()));
+    }
+    this.props = new ObjectMapper().writeValueAsString(combinedVariables);
   }
 
   public byte[] graphiql(
       String contextPath, @PathVariable Map<String, String> params, Object csrf) {
+    Map<String, String> finalHeaders = Optional.ofNullable(graphiQLProperties.getHeaders())
+        .orElseGet(Collections::emptyMap);
     if (csrf != null) {
       CsrfToken csrfToken = (CsrfToken) csrf;
-      headerProperties.setProperty(csrfToken.getHeaderName(), csrfToken.getToken());
+      finalHeaders = new HashMap<>(finalHeaders);
+      finalHeaders.put(csrfToken.getHeaderName(), csrfToken.getToken());
     }
 
     Map<String, String> replacements =
         getReplacements(
             constructGraphQlEndpoint(contextPath, params),
             contextPath + graphiQLProperties.getEndpoint().getSubscriptions(),
-            contextPath + graphiQLProperties.getBasePath());
+            contextPath + graphiQLProperties.getBasePath(),
+            finalHeaders);
 
     String populatedTemplate = StringSubstitutor.replace(template, replacements);
     return populatedTemplate.getBytes(Charset.defaultCharset());
   }
 
   private Map<String, String> getReplacements(
-      String graphqlEndpoint, String subscriptionsEndpoint, String staticBasePath) {
+      String graphqlEndpoint, String subscriptionsEndpoint, String staticBasePath,
+      Map<String, String> headers) {
     Map<String, String> replacements = new HashMap<>();
     replacements.put("graphqlEndpoint", graphqlEndpoint);
     replacements.put("subscriptionsEndpoint", subscriptionsEndpoint);
@@ -137,7 +148,7 @@ public abstract class GraphiQLController {
             joinJsDelivrPath("graphiql-subscriptions-fetcher", "0.0.2", "browser/client.js")));
     replacements.put("props", props);
     try {
-      replacements.put("headers", new ObjectMapper().writeValueAsString(headerProperties));
+      replacements.put("headers", new ObjectMapper().writeValueAsString(headers));
     } catch (JsonProcessingException e) {
       log.error("Cannot serialize headers", e);
     }
@@ -190,5 +201,9 @@ public abstract class GraphiQLController {
       return contextPath + endpoint;
     }
     return endpoint;
+  }
+
+  private String getContent(final ClassPathResource resource) throws IOException {
+    return new String(Files.readAllBytes(resource.getFile().toPath()), StandardCharsets.UTF_8);
   }
 }

@@ -21,14 +21,14 @@ public class GraphiQLAutoConfiguration {
 
   @Bean(name = "graphiQLController")
   @ConditionalOnWebApplication(type = SERVLET)
-  ServletGraphiQLController servletGraphiQLController() {
-    return new ServletGraphiQLController();
+  ServletGraphiQLController servletGraphiQLController(GraphiQLProperties properties) {
+    return new ServletGraphiQLController(properties);
   }
 
   @Bean(name = "graphiQLController")
   @ConditionalOnMissingBean(ServletGraphiQLController.class)
   @ConditionalOnWebApplication(type = REACTIVE)
-  ReactiveGraphiQLController reactiveGraphiQLController() {
-    return new ReactiveGraphiQLController();
+  ReactiveGraphiQLController reactiveGraphiQLController(GraphiQLProperties properties) {
+    return new ReactiveGraphiQLController(properties);
   }
 }

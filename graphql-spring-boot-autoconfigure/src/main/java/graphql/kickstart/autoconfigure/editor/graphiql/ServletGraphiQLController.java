@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class ServletGraphiQLController extends GraphiQLController {
 
+  public ServletGraphiQLController(GraphiQLProperties graphiQLProperties) {
+    super(graphiQLProperties);
+  }
+
   @Override
   @PostConstruct
   public void onceConstructed() throws IOException {
