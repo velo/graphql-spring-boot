@@ -30,20 +30,24 @@ import org.springframework.boot.convert.DurationUnit;
 @ConfigurationProperties(prefix = "graphql.servlet")
 public class GraphQLServletProperties {
 
-  public final static Duration DEFAULT_SUBSCRIPTION_TIMEOUT = Duration.ZERO;
+  public static final Duration DEFAULT_SUBSCRIPTION_TIMEOUT = Duration.ZERO;
 
   private boolean enabled = true;
   private boolean corsEnabled = true;
   private String mapping = "/graphql";
   private boolean exceptionHandlersEnabled = false;
-  /**
-   * Subscription timeout. If a duration suffix is not specified, millisecond will be used.
-   */
+  /** Subscription timeout. If a duration suffix is not specified, millisecond will be used. */
   @DurationUnit(ChronoUnit.MILLIS)
   private Duration subscriptionTimeout = DEFAULT_SUBSCRIPTION_TIMEOUT;
+
   private ContextSetting contextSetting = ContextSetting.PER_QUERY_WITH_INSTRUMENTATION;
-  /** Asynchronous execution timeout. If a duration suffix is not specified, millisecond will be used. @deprecated Use <tt>graphql.servlet.async.timeout</tt> instead */
-  @Deprecated @DurationUnit(ChronoUnit.MILLIS) private Duration asyncTimeout;
+  /**
+   * Asynchronous execution timeout. If a duration suffix is not specified, millisecond will be
+   * used. @deprecated Use <tt>graphql.servlet.async.timeout</tt> instead
+   */
+  @Deprecated
+  @DurationUnit(ChronoUnit.MILLIS)
+  private Duration asyncTimeout;
   /** @deprecated Use <tt>graphql.servlet.async.enabled</tt> instead */
   @Deprecated private Boolean asyncModeEnabled;
 

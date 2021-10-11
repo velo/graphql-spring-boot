@@ -73,6 +73,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -128,6 +129,7 @@ public class GraphQLWebAutoConfiguration {
 
   @Bean
   @ConditionalOnClass(CorsFilter.class)
+  @Conditional(CorsEnabledCondition.class)
   @ConfigurationProperties("graphql.servlet.cors")
   public CorsConfiguration corsConfiguration() {
     return new CorsConfiguration();
@@ -135,10 +137,7 @@ public class GraphQLWebAutoConfiguration {
 
   @Bean
   @ConditionalOnClass(CorsFilter.class)
-  @ConditionalOnProperty(
-      value = "graphql.servlet.corsEnabled",
-      havingValue = "true",
-      matchIfMissing = true)
+  @Conditional(CorsEnabledCondition.class)
   public CorsFilter corsConfigurer(CorsConfiguration corsConfiguration) {
     Map<String, CorsConfiguration> corsConfigurations = new LinkedHashMap<>(1);
     if (corsConfiguration.getAllowedMethods() == null) {
@@ -303,12 +302,17 @@ public class GraphQLWebAutoConfiguration {
       @Autowired(required = false) GraphQLResponseCacheManager responseCacheManager,
       @Autowired(required = false) AsyncTaskDecorator asyncTaskDecorator,
       @Autowired(required = false) @Qualifier("graphqlAsyncTaskExecutor") Executor asyncExecutor) {
-    Duration asyncTimeout = Optional.ofNullable(asyncServletProperties.getTimeout()) //
-        .orElse(AsyncServletProperties.DEFAULT_TIMEOUT);
-    long asyncTimeoutMilliseconds = Optional.ofNullable(graphQLServletProperties.getAsyncTimeout()) //
-        .orElse(asyncTimeout).toMillis();
-    long subscriptionTimeoutMilliseconds = Optional.ofNullable(graphQLServletProperties.getSubscriptionTimeout()) //
-        .orElse(GraphQLServletProperties.DEFAULT_SUBSCRIPTION_TIMEOUT).toMillis();
+    Duration asyncTimeout =
+        Optional.ofNullable(asyncServletProperties.getTimeout()) //
+            .orElse(AsyncServletProperties.DEFAULT_TIMEOUT);
+    long asyncTimeoutMilliseconds =
+        Optional.ofNullable(graphQLServletProperties.getAsyncTimeout()) //
+            .orElse(asyncTimeout)
+            .toMillis();
+    long subscriptionTimeoutMilliseconds =
+        Optional.ofNullable(graphQLServletProperties.getSubscriptionTimeout()) //
+            .orElse(GraphQLServletProperties.DEFAULT_SUBSCRIPTION_TIMEOUT)
+            .toMillis();
     return GraphQLConfiguration.with(invocationInputFactory)
         .with(graphQLInvoker)
         .with(graphQLObjectMapper)
