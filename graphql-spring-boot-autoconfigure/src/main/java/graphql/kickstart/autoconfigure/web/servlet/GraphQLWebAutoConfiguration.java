@@ -129,7 +129,11 @@ public class GraphQLWebAutoConfiguration {
 
   @Bean
   @ConditionalOnClass(CorsFilter.class)
-  @Conditional(CorsEnabledCondition.class)
+  @ConditionalOnProperty(
+      prefix = "graphql.servlet",
+      name = "cors-enabled",
+      havingValue = "true",
+      matchIfMissing = true)
   @ConfigurationProperties("graphql.servlet.cors")
   public CorsConfiguration corsConfiguration() {
     return new CorsConfiguration();
@@ -137,8 +141,13 @@ public class GraphQLWebAutoConfiguration {
 
   @Bean
   @ConditionalOnClass(CorsFilter.class)
-  @Conditional(CorsEnabledCondition.class)
+  @ConditionalOnProperty(
+      prefix = "graphql.servlet",
+      name = "cors-enabled",
+      havingValue = "true",
+      matchIfMissing = true)
   public CorsFilter corsConfigurer(CorsConfiguration corsConfiguration) {
+    log.info("Enabling cors filter");
     Map<String, CorsConfiguration> corsConfigurations = new LinkedHashMap<>(1);
     if (corsConfiguration.getAllowedMethods() == null) {
       corsConfiguration.setAllowedMethods(
