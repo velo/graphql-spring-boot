@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,19 +30,37 @@ class GraphQLErrorHandlerFactoryTest {
     Mockito.when(applicationContext.getBeanFactory()).thenReturn(beanFactory);
     Mockito.when(beanFactory.getBeanDefinitionNames()).thenReturn(new String[] {"Test"});
     Mockito.when(applicationContext.containsBean("Test")).thenReturn(true);
-    Mockito.doReturn(TestClass.class).when(applicationContext).getType("Test");
 
     errorHandlerFactory = new GraphQLErrorHandlerFactory();
   }
 
   @Test
   void createFindsCollectionHandler() {
+    Mockito.doReturn(TestClass.class).when(applicationContext).getType("Test");
+
     GraphQLErrorHandler handler = errorHandlerFactory.create(applicationContext, true);
     assertThat(handler).isInstanceOf(GraphQLErrorFromExceptionHandler.class);
     GraphQLErrorFromExceptionHandler errorHandler = (GraphQLErrorFromExceptionHandler) handler;
     assertThat(errorHandler.getFactories())
         .as("handler.factories should not be empty")
         .isNotEmpty();
+  }
+
+  @Test
+  void createFindsExceptionHandlerEvenIfProxy() {
+    Mockito.doReturn(proxyTestClass()).when(applicationContext).getType("Test");
+
+    GraphQLErrorHandler handler = errorHandlerFactory.create(applicationContext, true);
+    assertThat(handler).isInstanceOf(GraphQLErrorFromExceptionHandler.class);
+    GraphQLErrorFromExceptionHandler errorHandler = (GraphQLErrorFromExceptionHandler) handler;
+    assertThat(errorHandler.getFactories())
+        .as("handler.factories should not be empty")
+        .isNotEmpty();
+  }
+
+  private Class<? extends TestClass> proxyTestClass() {
+    TestClass proxy = (TestClass) new ProxyFactory(new TestClass()).getProxy();
+    return proxy.getClass();
   }
 
   public static class TestClass {
