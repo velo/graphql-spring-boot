@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 class RequestFactory {
 
@@ -21,6 +22,12 @@ class RequestFactory {
     LinkedMultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
     values.add("query", forJson(query, new HttpHeaders()));
     values.add("variables", forJson(variables, new HttpHeaders()));
+    return new HttpEntity<>(values, headers);
+  }
+
+  static HttpEntity<Object> forMultipart(
+      MultiValueMap<String, Object> values, HttpHeaders headers) {
+    headers.setContentType(MediaType.MULTIPART_FORM_DATA);
     return new HttpEntity<>(values, headers);
   }
 }
