@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        java: [ 8, 11, 16 ]
+        java: [ 8, 11, 17 ]
     needs: [ validation, commitlint ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -42,7 +42,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
       - name: Cache Gradle
         uses: actions/cache@v2
@@ -85,7 +85,7 @@ jobs:
         if: env.SONAR_TOKEN != null
         uses: actions/setup-java@v2
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: 11
       - name: Cache SonarCloud packages
         if: env.SONAR_TOKEN != null

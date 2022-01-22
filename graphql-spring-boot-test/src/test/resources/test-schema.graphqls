@@ -1,3 +1,5 @@
+scalar Upload
+
 type FooBar {
     foo: String!
     bar: String!
@@ -17,4 +19,9 @@ type Query {
     fooBar(foo: String, bar: String): FooBar!
     queryWithVariables(input: String!): String!
     queryWithHeader(headerName: String!): String
+}
+
+type Mutation {
+    uploadFiles(files: [Upload]!): [String!]
+    uploadFile(file: Upload): String!
 }
