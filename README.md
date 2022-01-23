@@ -239,30 +239,31 @@ Available Spring Boot configuration parameters (either `application.yml`
 or `application.properties`):
 
 ```yaml
-altair:
-  enabled: true
-  mapping: /altair
-  subscriptions:
-    timeout: 30
-    reconnect: false
-  static:
-    base-path: /
-  page-title: Altair
-  cdn:
-    enabled: false
-    version: 4.0.2
-  options:
-    endpoint-url: /graphql
-    subscriptions-endpoint: /subscriptions
-    initial-settings:
-      theme: dracula
-    initial-headers:
-      Authorization: "Bearer <your-token>"
-  resources:
-    initial-query: defaultQuery.graphql
-    initial-variables: variables.graphql
-    initial-pre-request-script: pre-request.graphql
-    initial-post-request-script: post-request.graphql
+graphql:
+  altair:
+    enabled: true
+    mapping: /altair
+    subscriptions:
+      timeout: 30
+      reconnect: false
+    static:
+      base-path: /
+    page-title: Altair
+    cdn:
+      enabled: false
+      version: 4.0.2
+    options:
+      endpoint-url: /graphql
+      subscriptions-endpoint: /subscriptions
+      initial-settings:
+        theme: dracula
+      initial-headers:
+        Authorization: "Bearer <your-token>"
+    resources:
+      initial-query: defaultQuery.graphql
+      initial-variables: variables.graphql
+      initial-pre-request-script: pre-request.graphql
+      initial-post-request-script: post-request.graphql
 ```
 
 By default Altair is served from within the package. This can be configured to be served from CDN
@@ -286,43 +287,44 @@ Available Spring Boot configuration parameters (either `application.yml`
 or `application.properties`):
 
 ```yaml
-graphql.playground:
-  mapping: /playground
-  endpoint: /graphql
-  subscriptionEndpoint: /subscriptions
-  staticPath.base: my-playground-resources-folder
-  enabled: true
-  pageTitle: Playground
-  cdn:
-    enabled: false
-    version: latest
-  settings:
-    editor.cursorShape: line
-    editor.fontFamily: "'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace"
-    editor.fontSize: 14
-    editor.reuseHeaders: true
-    editor.theme: dark
-    general.betaUpdates: false
-    prettier.printWidth: 80
-    prettier.tabWidth: 2
-    prettier.useTabs: false
-    request.credentials: omit
-    schema.polling.enable: true
-    schema.polling.endpointFilter: "*localhost*"
-    schema.polling.interval: 2000
-    schema.disableComments: true
-    tracing.hideTracingResponse: true
-  headers:
-    headerFor: AllTabs
-  tabs:
-    - name: Example Tab
-      query: classpath:exampleQuery.graphql
-      headers:
-        SomeHeader: Some value
-      variables: classpath:variables.json
-      responses:
-        - classpath:exampleResponse1.json
-        - classpath:exampleResponse2.json
+graphql:
+  playground:
+    mapping: /playground
+    endpoint: /graphql
+    subscriptionEndpoint: /subscriptions
+    staticPath.base: my-playground-resources-folder
+    enabled: true
+    pageTitle: Playground
+    cdn:
+      enabled: false
+      version: latest
+    settings:
+      editor.cursorShape: line
+      editor.fontFamily: "'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace"
+      editor.fontSize: 14
+      editor.reuseHeaders: true
+      editor.theme: dark
+      general.betaUpdates: false
+      prettier.printWidth: 80
+      prettier.tabWidth: 2
+      prettier.useTabs: false
+      request.credentials: omit
+      schema.polling.enable: true
+      schema.polling.endpointFilter: "*localhost*"
+      schema.polling.interval: 2000
+      schema.disableComments: true
+      tracing.hideTracingResponse: true
+    headers:
+      headerFor: AllTabs
+    tabs:
+      - name: Example Tab
+        query: classpath:exampleQuery.graphql
+        headers:
+          SomeHeader: Some value
+        variables: classpath:variables.json
+        responses:
+          - classpath:exampleResponse1.json
+          - classpath:exampleResponse2.json
 ```
 
 ## Basic settings
@@ -388,24 +390,25 @@ Available Spring Boot configuration parameters (either `application.yml`
 or `application.properties`):
 
 ```yaml
-voyager:
-  enabled: true
-  basePath: /
-  mapping: /voyager
-  endpoint: /graphql
-  cdn:
-    enabled: false
-    version: latest
-  pageTitle: Voyager
-  displayOptions:
-    skipRelay: true
-    skipDeprecated: true
-    rootType: Query
-    sortByAlphabet: false
-    showLeafFields: true
-    hideRoot: false
-  hideDocs: false
-  hideSettings: false
+graphql:
+  voyager:
+    enabled: true
+    basePath: /
+    mapping: /voyager
+    endpoint: /graphql
+    cdn:
+      enabled: false
+      version: latest
+    pageTitle: Voyager
+    displayOptions:
+      skipRelay: true
+      skipDeprecated: true
+      rootType: Query
+      sortByAlphabet: false
+      showLeafFields: true
+      hideRoot: false
+    hideDocs: false
+    hideSettings: false
 ```
 
 ## GraphQL Voyager Basic settings
