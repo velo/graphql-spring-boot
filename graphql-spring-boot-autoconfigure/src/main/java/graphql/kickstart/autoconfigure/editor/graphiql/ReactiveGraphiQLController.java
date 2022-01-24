@@ -20,6 +20,10 @@ public class ReactiveGraphiQLController extends GraphiQLController {
 
   private final DataBufferFactory dataBufferFactory = new DefaultDataBufferFactory();
 
+  public ReactiveGraphiQLController( GraphiQLProperties graphiQLProperties) {
+    super(graphiQLProperties);
+  }
+
   @Override
   @PostConstruct
   public void onceConstructed() throws IOException {

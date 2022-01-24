@@ -173,9 +173,9 @@
   props.onEditVariables = onEditVariables
   props.onEditOperationName = onEditOperationName
   props.onEditHeaders = onEditHeaders
-  props.headers = props.headers || '{}'
+  props.headers = props.headers || {}
   if (headers) {
-    var newHeaders = Object.assign({}, JSON.parse(props.headers), headers)
+    var newHeaders = Object.assign({}, props.headers, headers)
     props.headers = JSON.stringify(newHeaders, undefined, 2)
   }
   onEditHeaders(props.headers)
