@@ -16,9 +16,9 @@ class ReflectiveGraphQLErrorFactory implements GraphQLErrorFactory {
 
   private final boolean singularReturnType;
   private final boolean withErrorContext;
-  private Object object;
-  private Method method;
-  private Throwables throwables;
+  private final Object object;
+  private final Method method;
+  private final Throwables throwables;
 
   ReflectiveGraphQLErrorFactory(Object object, Method method) {
     this.object = object;
@@ -36,10 +36,10 @@ class ReflectiveGraphQLErrorFactory implements GraphQLErrorFactory {
   @Override
   public Collection<GraphQLError> create(Throwable t, ErrorContext errorContext) {
     try {
-      method.setAccessible(true);
       if (singularReturnType) {
         return singletonList((GraphQLError) invoke(t, errorContext));
       }
+      //noinspection unchecked
       return (Collection<GraphQLError>) invoke(t, errorContext);
     } catch (IllegalAccessException | InvocationTargetException e) {
       log.error("Cannot create GraphQLError from throwable {}", t.getClass().getSimpleName(), e);
@@ -47,12 +47,12 @@ class ReflectiveGraphQLErrorFactory implements GraphQLErrorFactory {
     }
   }
 
-  private Object invoke(Throwable t, ErrorContext errorContext) throws IllegalAccessException, InvocationTargetException {
+  private Object invoke(Throwable t, ErrorContext errorContext)
+      throws IllegalAccessException, InvocationTargetException {
     if (withErrorContext) {
       return method.invoke(object, t, errorContext);
     } else {
       return method.invoke(object, t);
     }
   }
-
 }

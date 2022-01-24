@@ -5,9 +5,9 @@ import static java.util.Collections.singletonList;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
+import graphql.GraphqlErrorBuilder;
 import graphql.SerializationError;
 import graphql.kickstart.execution.error.DefaultGraphQLErrorHandler;
-import graphql.kickstart.execution.error.GenericGraphQLError;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,25 +21,27 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 class GraphQLErrorFromExceptionHandler extends DefaultGraphQLErrorHandler {
 
-  private List<GraphQLErrorFactory> factories;
+  private final List<GraphQLErrorFactory> factories;
 
   GraphQLErrorFromExceptionHandler(List<GraphQLErrorFactory> factories) {
     this.factories = factories;
   }
 
+  @Override
   protected List<GraphQLError> filterGraphQLErrors(List<GraphQLError> errors) {
-    return errors.stream().map(this::transform).flatMap(Collection::stream).collect(Collectors.toList());
+    return errors.stream()
+        .map(this::transform)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
   }
 
   private Collection<GraphQLError> transform(GraphQLError error) {
-    ErrorContext errorContext = new ErrorContext(
-            error.getLocations(),
-            error.getPath(),
-            error.getExtensions(),
-            error.getErrorType()
-    );
-    return extractException(error).map(throwable -> transform(throwable, errorContext))
-        .orElse(singletonList(new GenericGraphQLError(error.getMessage())));
+    ErrorContext errorContext =
+        new ErrorContext(
+            error.getLocations(), error.getPath(), error.getExtensions(), error.getErrorType());
+    return extractException(error)
+        .map(throwable -> transform(throwable, errorContext))
+        .orElse(singletonList(error));
   }
 
   private Optional<Throwable> extractException(GraphQLError error) {
@@ -55,12 +57,24 @@ class GraphQLErrorFromExceptionHandler extends DefaultGraphQLErrorHandler {
 
   private Collection<GraphQLError> transform(Throwable throwable, ErrorContext errorContext) {
     Map<Class<? extends Throwable>, GraphQLErrorFactory> applicables = new HashMap<>();
-    factories.forEach(factory -> factory.mostConcrete(throwable).ifPresent(t -> applicables.put(t, factory)));
+    factories.forEach(
+        factory -> factory.mostConcrete(throwable).ifPresent(t -> applicables.put(t, factory)));
     return applicables.keySet().stream()
         .min(new ThrowableComparator())
         .map(applicables::get)
         .map(factory -> factory.create(throwable, errorContext))
-        .orElse(singletonList(new ThrowableGraphQLError(throwable)));
+        .orElseGet(() -> withThrowable(throwable, errorContext));
   }
 
+  private Collection<GraphQLError> withThrowable(Throwable throwable, ErrorContext errorContext) {
+    Map<String, Object> extensions =
+        Optional.ofNullable(errorContext.getExtensions()).orElseGet(HashMap::new);
+    extensions.put("type", throwable.getClass().getSimpleName());
+    GraphqlErrorBuilder builder = GraphqlErrorBuilder.newError().extensions(extensions);
+    Optional.ofNullable(throwable.getMessage()).ifPresent(builder::message);
+    Optional.ofNullable(errorContext.getErrorType()).ifPresent(builder::errorType);
+    Optional.ofNullable(errorContext.getLocations()).ifPresent(builder::locations);
+    Optional.ofNullable(errorContext.getPath()).ifPresent(builder::path);
+    return singletonList(builder.build());
+  }
 }

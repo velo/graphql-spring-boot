@@ -1,8 +1,15 @@
 package graphql.kickstart.spring;
 
+import graphql.ExecutionResultImpl;
 import graphql.kickstart.execution.GraphQLObjectMapper;
 import graphql.kickstart.execution.GraphQLRequest;
+import graphql.kickstart.execution.error.GenericGraphQLError;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,45 +22,45 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-
 @RequiredArgsConstructor
+@Slf4j
 public abstract class AbstractGraphQLController {
+
+  private static final String INVALID_REQUEST_BODY_MESSAGE = "Bad request - invalid request body.";
 
   private final GraphQLObjectMapper objectMapper;
 
-  @PostMapping(value = "${graphql.url:graphql}",
-          consumes = MediaType.ALL_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(
+      value = "${graphql.url:graphql}",
+      consumes = MediaType.ALL_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public Object graphqlPOST(
       @RequestHeader(HttpHeaders.CONTENT_TYPE) final MediaType contentType,
       @Nullable @RequestParam(value = "query", required = false) String query,
       @Nullable @RequestParam(value = "operationName", required = false) String operationName,
       @Nullable @RequestParam(value = "variables", required = false) String variablesJson,
+      @Nullable @RequestParam(value = "extensions", required = false) String extensionsJson,
       @Nullable @RequestBody(required = false) String body,
-      ServerWebExchange serverWebExchange) throws IOException {
+      ServerWebExchange serverWebExchange) {
 
     body = Optional.ofNullable(body).orElse("");
 
-    // https://graphql.org/learn/serving-over-http/#post-request
-    //
-    // A standard GraphQL POST request should use the application/json content type,
-    // and include a JSON-encoded body of the following form:
-    //
-    // {
-    //   "query": "...",
-    //   "operationName": "...",
-    //   "variables": { "myVariable": "someValue", ... }
-    // }
-
     if (MediaType.APPLICATION_JSON.isCompatibleWith(contentType)) {
-      GraphQLRequest request = objectMapper.readGraphQLRequest(body);
+      GraphQLRequest request;
+      try {
+        request = objectMapper.readGraphQLRequest(body);
+      } catch (IOException e) {
+        return handleBodyParsingException(e);
+      }
       if (request.getQuery() == null) {
         request.setQuery("");
       }
-      return executeRequest(request.getQuery(), request.getOperationName(), request.getVariables(), serverWebExchange);
+      return executeRequest(
+          request.getQuery(),
+          request.getOperationName(),
+          request.getVariables(),
+          request.getExtensions(),
+          serverWebExchange);
     }
 
     // In addition to the above, we recommend supporting two additional cases:
@@ -62,58 +69,64 @@ public abstract class AbstractGraphQLController {
     //   it should be parsed and handled in the same way as the HTTP GET case.
 
     if (query != null) {
-      return executeRequest(query, operationName, convertVariablesJson(variablesJson), serverWebExchange);
+      return executeRequest(
+          query,
+          operationName,
+          convertVariablesJson(variablesJson),
+          convertExtensionsJson(extensionsJson),
+          serverWebExchange);
     }
 
     // * If the "application/graphql" Content-Type header is present,
     //   treat the HTTP POST body contents as the GraphQL query string.
 
-    if ("application/graphql".equals(contentType.toString()) || "application/graphql; charset=utf-8".equals(contentType.toString())) {
-      return executeRequest(body, null, Collections.emptyMap(), serverWebExchange);
+    if ("application/graphql".equals(contentType.toString())
+        || "application/graphql; charset=utf-8".equals(contentType.toString())) {
+      return executeRequest(
+          body, null, Collections.emptyMap(), Collections.emptyMap(), serverWebExchange);
     }
 
-    throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Could not process GraphQL request");
+    throw new ResponseStatusException(
+        HttpStatus.UNPROCESSABLE_ENTITY, "Could not process GraphQL request");
   }
 
-  @GetMapping(value = "${graphql.url:graphql}",
-      produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value = "${graphql.url:graphql}", produces = MediaType.APPLICATION_JSON_VALUE)
   public Object graphqlGET(
       @Nullable @RequestParam("query") String query,
       @Nullable @RequestParam(value = "operationName", required = false) String operationName,
       @Nullable @RequestParam(value = "variables", required = false) String variablesJson,
+      @Nullable @RequestParam(value = "extensions", required = false) String extensionsJson,
       ServerWebExchange serverWebExchange) {
-
-    // https://graphql.org/learn/serving-over-http/#get-request
-    //
-    // When receiving an HTTP GET request, the GraphQL query should be specified in the "query" query string.
-    // For example, if we wanted to execute the following GraphQL query:
-    //
-    // {
-    //   me {
-    //     name
-    //   }
-    // }
-    //
-    // This request could be sent via an HTTP GET like so:
-    //
-    // http://myapi/graphql?query={me{name}}
-    //
-    // Query variables can be sent as a JSON-encoded string in an additional query parameter called "variables".
-    // If the query contains several named operations,
-    // an "operationName" query parameter can be used to control which one should be executed.
-
-    return executeRequest(query, operationName, convertVariablesJson(variablesJson), serverWebExchange);
+    return executeRequest(
+        query == null ? "" : query,
+        operationName,
+        convertVariablesJson(variablesJson),
+        convertExtensionsJson(extensionsJson),
+        serverWebExchange);
   }
 
   private Map<String, Object> convertVariablesJson(String jsonMap) {
-    return Optional.ofNullable(jsonMap).map(objectMapper::deserializeVariables).orElseGet(Collections::emptyMap);
+    return Optional.ofNullable(jsonMap)
+        .map(objectMapper::deserializeVariables)
+        .orElseGet(Collections::emptyMap);
+  }
+
+  private Map<String, Object> convertExtensionsJson(String jsonMap) {
+    return Optional.ofNullable(jsonMap)
+        .map(objectMapper::deserializeExtensions)
+        .orElseGet(Collections::emptyMap);
   }
 
   protected abstract Object executeRequest(
       String query,
       String operationName,
       Map<String, Object> variables,
-      ServerWebExchange serverWebExchange
-  );
+      Map<String, Object> extensions,
+      ServerWebExchange serverWebExchange);
 
+  protected Object handleBodyParsingException(Exception exception) {
+    log.error("{} {}", INVALID_REQUEST_BODY_MESSAGE, exception.getMessage());
+    return objectMapper.createResultFromExecutionResult(
+        new ExecutionResultImpl(new GenericGraphQLError(INVALID_REQUEST_BODY_MESSAGE)));
+  }
 }
