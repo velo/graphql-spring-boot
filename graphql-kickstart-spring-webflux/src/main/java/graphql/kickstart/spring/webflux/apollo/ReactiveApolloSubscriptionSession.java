@@ -22,6 +22,12 @@ public class ReactiveApolloSubscriptionSession extends ApolloSubscriptionSession
   }
 
   @Override
+  public void close(String reason) {
+    super.close(reason);
+    session.close(reason);
+  }
+
+  @Override
   public Map<String, Object> getUserProperties() {
     return session.getUserProperties();
   }
