@@ -19,12 +19,12 @@ and join the team!
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [Quick start](#quick-start)
-  - [Using Gradle](#using-gradle)
-  - [Using Maven](#using-maven)
-- [Documentation](#documentation)
-- [Requirements and Downloads](#requirements-and-downloads)
-  - [Snapshots](#snapshots)
+  - [Quick start](#quick-start)
+    - [Using Gradle](#using-gradle)
+    - [Using Maven](#using-maven)
+  - [Documentation](#documentation)
+  - [Requirements and Downloads](#requirements-and-downloads)
+    - [Snapshots](#snapshots)
 - [Enable GraphQL Servlet](#enable-graphql-servlet)
 - [Enable Graph*i*QL](#enable-graphiql)
 - [Enable Altair](#enable-altair)
@@ -35,8 +35,8 @@ and join the team!
   - [Customizing GraphQL Playground](#customizing-graphql-playground)
   - [Tabs](#tabs)
 - [Enable GraphQL Voyager](#enable-graphql-voyager)
-  - [Basic settings](#graphql-voyager-basic-settings)
-  - [CDN](#graphql-voyager-cdn)
+  - [GraphQL Voyager Basic settings](#graphql-voyager-basic-settings)
+  - [GraphQL Voyager CDN](#graphql-voyager-cdn)
   - [Customizing GraphQL Voyager](#customizing-graphql-voyager)
 - [Supported GraphQL-Java Libraries](#supported-graphql-java-libraries)
   - [GraphQL Java Tools](#graphql-java-tools)
@@ -47,11 +47,11 @@ and join the team!
     - [Custom scalars and type functions](#custom-scalars-and-type-functions)
     - [Custom Relay and GraphQL Annotation Processor](#custom-relay-and-graphql-annotation-processor)
   - [Extended scalars](#extended-scalars)
+  - [Aliased scalars](#aliased-scalars)
 - [Tracing and Metrics](#tracing-and-metrics)
   - [Usage](#usage)
-- [FAQs](#faqs)
-  - [WARNING: NoClassDefFoundError when using GraphQL Java Tools > 5.4.x](#warning-noclassdeffounderror-when-using-graphql-java-tools--54x)
-
+  - [FAQs](#faqs)
+    - [WARNING: NoClassDefFoundError when using GraphQL Java Tools > 5.4.x](#warning-noclassdeffounderror-when-using-graphql-java-tools--54x)
 - [Contributions](#contributions)
 - [Licenses](#licenses)
 
@@ -563,6 +563,34 @@ declared in the GraphQL Schema:
 scalar BigDecimal
 scalar Date
 ```
+
+## Aliased scalars
+
+*Requires version 12.0.1 or greater*
+
+The starter also supports [aliased scalars](https://github.com/graphql-java/graphql-java-extended-scalars#alias-scalars).
+You can define aliases for any standard or extended scalar, as shown in the example below. Note that
+ the original extended scalar (`BigDecimal`) will *not* be available.  You have to use 
+`graphql.extended-scalars` property to declare it.
+
+```yaml
+graphql:
+  aliased-scalars:
+    BigDecimal: Number, Decimal
+    String: Text
+```
+
+When using the [GraphQL Java Tools](#graphql-java-tools) integration, the aliased scalars must also be
+declared in the GraphQL Schema:
+
+```graphql
+scalar Number
+scalar Decimal
+scalar Text
+```
+
+**Note**: *Custom scalar beans cannot be aliased this way. If you need to alias them, you have to
+manually declare the aliased scalar bean.*
 
 # Tracing and Metrics
 
