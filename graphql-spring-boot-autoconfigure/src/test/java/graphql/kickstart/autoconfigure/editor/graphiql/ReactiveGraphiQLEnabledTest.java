@@ -50,4 +50,20 @@ class ReactiveGraphiQLEnabledTest {
     log.info("{}", responseBody);
     assertThat(document.select("head title").text()).isEqualTo("GraphiQL");
   }
+
+  @Test
+  void graphiqlResourceShouldBeAvailableAtDefaultEndpoint() {
+    final String responseBody =
+        webTestClient
+            .get()
+            .uri("/vendor/graphiql/favicon.ico")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertThat(responseBody).isNotNull();
+  }
 }
