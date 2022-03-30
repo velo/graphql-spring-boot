@@ -1,9 +1,9 @@
 package com.graphql.spring.boot.test.beans;
 
-import graphql.kickstart.servlet.context.GraphQLServletContext;
 import graphql.kickstart.tools.GraphQLQueryResolver;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,8 +30,8 @@ public class DummyQuery implements GraphQLQueryResolver {
 
   public String queryWithHeader(
       final String headerName, final DataFetchingEnvironment dataFetchingEnvironment) {
-    return ((GraphQLServletContext) dataFetchingEnvironment.getContext())
-        .getHttpServletRequest()
+    return ((HttpServletRequest)
+            dataFetchingEnvironment.getGraphQlContext().get(HttpServletRequest.class))
         .getHeader(headerName);
   }
 }
