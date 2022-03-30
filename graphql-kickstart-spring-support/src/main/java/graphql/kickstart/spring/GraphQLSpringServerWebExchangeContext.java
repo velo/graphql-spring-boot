@@ -1,28 +1,31 @@
 package graphql.kickstart.spring;
 
 import graphql.kickstart.execution.context.DefaultGraphQLContext;
-import java.util.Objects;
+import lombok.NonNull;
 import org.dataloader.DataLoaderRegistry;
 import org.springframework.web.server.ServerWebExchange;
 
 public class GraphQLSpringServerWebExchangeContext extends DefaultGraphQLContext
     implements GraphQLSpringContext {
 
-  private final ServerWebExchange serverWebExchange;
-
   public GraphQLSpringServerWebExchangeContext(ServerWebExchange serverWebExchange) {
     this(new DataLoaderRegistry(), serverWebExchange);
   }
 
   public GraphQLSpringServerWebExchangeContext(
-      DataLoaderRegistry dataLoaderRegistry, ServerWebExchange serverWebExchange) {
-    super(dataLoaderRegistry, null);
-    this.serverWebExchange =
-        Objects.requireNonNull(serverWebExchange, "Server web exchange cannot be null");
+      DataLoaderRegistry dataLoaderRegistry, @NonNull ServerWebExchange serverWebExchange) {
+    super(dataLoaderRegistry);
+    put(ServerWebExchange.class, serverWebExchange);
   }
 
+  /**
+   * @deprecated Use {@code
+   *     dataFetchingEnvironment.getGraphQlContext().get(ServerWebExchange.class)} instead. Since
+   *     13.0.0
+   */
   @Override
+  @Deprecated
   public ServerWebExchange getServerWebExchange() {
-    return serverWebExchange;
+    return (ServerWebExchange) getMapOfContext().get(ServerWebExchange.class);
   }
 }

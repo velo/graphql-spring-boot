@@ -1,28 +1,29 @@
 package graphql.kickstart.spring.webflux;
 
 import graphql.kickstart.execution.context.DefaultGraphQLContext;
-import java.util.Objects;
+import lombok.NonNull;
 import org.dataloader.DataLoaderRegistry;
 import org.springframework.web.reactive.socket.WebSocketSession;
 
 public class DefaultGraphQLSpringWebSocketSessionContext extends DefaultGraphQLContext
     implements GraphQLSpringWebSocketSessionContext {
 
-  private final WebSocketSession webSocketSession;
-
   public DefaultGraphQLSpringWebSocketSessionContext(WebSocketSession webSocketSession) {
     this(new DataLoaderRegistry(), webSocketSession);
   }
 
   public DefaultGraphQLSpringWebSocketSessionContext(
-      DataLoaderRegistry dataLoaderRegistry, WebSocketSession webSocketSession) {
-    super(dataLoaderRegistry, null);
-    this.webSocketSession =
-        Objects.requireNonNull(webSocketSession, "WebSocketSession is required");
+      DataLoaderRegistry dataLoaderRegistry, @NonNull WebSocketSession webSocketSession) {
+    super(dataLoaderRegistry);
+    put(WebSocketSession.class, webSocketSession);
   }
 
+  /**
+   * @deprecated Use {@code dataFetchingEnvironment.getGraphQlContext().get(WebSocketSession.class)}
+   *     instead. Since 13.0.0
+   */
   @Override
   public WebSocketSession getWebSocketSession() {
-    return webSocketSession;
+    return (WebSocketSession) getMapOfContext().get(WebSocketSession.class);
   }
 }
