@@ -381,8 +381,8 @@ public class GraphQLTestTemplate {
    *     representing given file inside multipart request (including size, submittedFileName, etc.)
    * @param pathFunc function to generate the path to file inside variables. For example:
    *     <ul>
-   *       <li>index -> String.format("variables.files.%d", index) for multiple files
-   *       <li>index -> "variables.file" for single file
+   *       <li>index -&gt; String.format("variables.files.%d", index) for multiple files
+   *       <li>index -&gt; "variables.file" for single file
    *     </ul>
    *
    * @return {@link GraphQLResponse} containing the result of query execution
