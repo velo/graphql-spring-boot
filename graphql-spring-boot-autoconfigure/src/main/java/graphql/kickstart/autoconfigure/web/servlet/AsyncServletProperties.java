@@ -22,7 +22,7 @@ public class AsyncServletProperties {
   private Threads threads = new Threads();
 
   @Data
-  static class Threads {
+  public static class Threads {
     private int min = 10;
     private int max = 200;
     private String namePrefix = "graphql-exec-";
