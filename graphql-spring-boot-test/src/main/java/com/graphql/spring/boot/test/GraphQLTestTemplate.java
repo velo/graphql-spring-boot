@@ -1,6 +1,8 @@
 package com.graphql.spring.boot.test;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +14,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.IntFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +36,11 @@ import org.springframework.util.StreamUtils;
 
 /** Helper class to test GraphQL queries and mutations. */
 public class GraphQLTestTemplate {
+
+  private static final Pattern GRAPHQL_OP_NAME_PATTERN = Pattern.compile(
+      "(query|mutation|subscription)\\s+([a-z0-9]+)\\s*[({]",
+      (Pattern.CASE_INSENSITIVE | Pattern.MULTILINE)
+  );
 
   private final ResourceLoader resourceLoader;
   private final TestRestTemplate restTemplate;
@@ -57,7 +67,9 @@ public class GraphQLTestTemplate {
     if (nonNull(operation)) {
       wrapper.put("operationName", operation);
     }
-    wrapper.set("variables", variables);
+    if (nonNull(variables)) {
+      wrapper.set("variables", variables);
+    }
     return objectMapper.writeValueAsString(wrapper);
   }
 
@@ -70,6 +82,16 @@ public class GraphQLTestTemplate {
     try (InputStream inputStream = resource.getInputStream()) {
       return StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
     }
+  }
+
+  private String getOperationName(String graphql) {
+    if (isNull(graphql)) {
+      return null;
+    }
+
+    Matcher matcher = GRAPHQL_OP_NAME_PATTERN.matcher(graphql);
+
+    return (matcher.find() ? matcher.group(2) : null);
   }
 
   /**
@@ -409,6 +431,95 @@ public class GraphQLTestTemplate {
     values.add("map", map);
 
     return postRequest(RequestFactory.forMultipart(values, headers));
+  }
+
+  /**
+   * Performs a GraphQL request using the provided GraphQL query string.
+   *
+   * Operation name will be derived from the provided GraphQL query string.
+   *
+   * @param graphql the GraphQL query
+   * @return {@link GraphQLResponse} containing the result of the query execution
+   * @throws IOException if the request json cannot be created because of issues with one of the
+   *         provided arguments
+   */
+  public GraphQLResponse postForString(String graphql) throws IOException {
+    return postForString(graphql, getOperationName(graphql), ((ObjectNode) null));
+  }
+
+  /**
+   * Performs a GraphQL request using the provided GraphQL query string and operation name.
+   *
+   * @param graphql the GraphQL query
+   * @param operation the name of the GraphQL operation to be executed
+   * @return {@link GraphQLResponse} containing the result of the query execution
+   * @throws IOException if the request json cannot be created because of issues with one of the
+   *         provided arguments
+   */
+  public GraphQLResponse postForString(String graphql, String operation) throws IOException {
+    return postForString(graphql, operation, ((ObjectNode) null));
+  }
+
+  /**
+   * Performs a GraphQL request using the provided GraphQL query string and variables.
+   *
+   * Operation name will be derived from the provided GraphQL query string.
+   *
+   * @param graphql the GraphQL query
+   * @param variables the input variables for the GraphQL query
+   * @return {@link GraphQLResponse} containing the result of the query execution
+   * @throws IOException if the request json cannot be created because of issues with one of the
+   *         provided arguments
+   */
+  public GraphQLResponse postForString(String graphql, Map<String, ?> variables) throws IOException {
+    return postForString(graphql, getOperationName(graphql), variables);
+  }
+
+  /**
+   * Performs a GraphQL request using the provided GraphQL query string, operation name, and
+   * variables.
+   *
+   * @param graphql the GraphQL query
+   * @param operation the name of the GraphQL operation to be executed
+   * @param variables the input variables for the GraphQL query
+   * @return {@link GraphQLResponse} containing the result of the query execution
+   * @throws IOException if the request json cannot be created because of issues with one of the
+   *         provided arguments
+   */
+  public GraphQLResponse postForString(String graphql, String operation, Map<String, ?> variables) throws IOException {
+    return postForString(graphql, operation, ((ObjectNode) new ObjectMapper().valueToTree(variables)));
+  }
+
+  /**
+   * Performs a GraphQL request using the provided GraphQL query string and variables.
+   *
+   * Operation name will be derived from the provided GraphQL query string.
+   *
+   * @param graphql the GraphQL query
+   * @param variables the input variables for the GraphQL query
+   * @return {@link GraphQLResponse} containing the result of the query execution
+   * @throws IOException if the request json cannot be created because of issues with one of the
+   *         provided arguments
+   */
+  public GraphQLResponse postForString(String graphql, ObjectNode variables) throws IOException {
+    return post(createJsonQuery(graphql, getOperationName(graphql), variables));
+  }
+
+  /**
+   * Performs a GraphQL request using the provided GraphQL query string, operation name, and
+   * variables.
+   *
+   * @param graphql the GraphQL query
+   * @param operation the name of the GraphQL operation to be executed
+   * @param variables the input variables for the GraphQL query
+   * @return {@link GraphQLResponse} containing the result of the query execution
+   * @throws IOException if the request json cannot be created because of issues with one of the
+   *         provided arguments
+   */
+  public GraphQLResponse postForString(String graphql, String operation, ObjectNode variables) throws IOException {
+    requireNonNull(graphql, "GraphQL query string cannot be null");
+
+    return post(createJsonQuery(graphql, operation, variables));
   }
 
   /**

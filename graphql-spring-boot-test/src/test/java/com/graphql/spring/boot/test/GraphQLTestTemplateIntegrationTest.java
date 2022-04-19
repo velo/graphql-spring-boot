@@ -1,5 +1,7 @@
 package com.graphql.spring.boot.test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -8,7 +10,9 @@ import graphql.GraphQLError;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -273,5 +277,195 @@ class GraphQLTestTemplateIntegrationTest {
         .assertThatField(DATA_FILE_UPLOAD_FILE)
         .asString()
         .isEqualTo(fileNames.get(0));
+  }
+
+  @Test
+  @DisplayName("Test postForString without operation name and without variables.")
+  void testPostString() throws IOException {
+    // GIVEN
+    final String graphql = "query {\n"
+            + "    otherQuery\n"
+            + "}";
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(graphql)
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_OTHER_QUERY)
+        .asString()
+        .isEqualTo(TEST);
+  }
+
+  @Test
+  @DisplayName("Test postForString with embedded operation name and without variables.")
+  void testPostStringWithEmbeddedOperationName() throws IOException {
+    // GIVEN
+    final String graphql = "query TestOperationYo {\n"
+        + "    otherQuery\n"
+        + "}";
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(graphql)
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_OTHER_QUERY)
+        .asString()
+        .isEqualTo(TEST);
+  }
+
+  @Test
+  @DisplayName("Test postForString with explicit operation name and without variables.")
+  void testPostStringWithExplicitOperationName() throws IOException {
+    // GIVEN
+    final String graphql = "query TestOperationYo {\n"
+        + "    otherQuery\n"
+        + "}";
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(graphql, "TestOperationYo")
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_OTHER_QUERY)
+        .asString()
+        .isEqualTo(TEST);
+  }
+
+  @Test
+  @DisplayName("Test postForString with fragments.")
+  void testPostForStringWithFragments() throws IOException {
+    graphQLTestTemplate
+        .postForString(
+            "query($foo: String, $bar: String) {\n"
+                + "    fooBar(foo: $foo, bar: $bar) {\n"
+                + "        ...FooBarFragment\n"
+                + "    }\n"
+                + "}"
+                + "fragment FooBarFragment on FooBar {\n"
+                + "    foo\n"
+                + "    bar\n"
+                + "}"
+        )
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_FOO_BAR)
+        .as(FooBar.class)
+        .usingRecursiveComparison()
+        .ignoringAllOverriddenEquals()
+        .isEqualTo(FooBar.builder().foo(FOO).bar(BAR).build());
+  }
+
+  @Test
+  @DisplayName("Test postForString with ObjectNode variables.")
+  void testPostForStringWithObjectNodeVariables() throws IOException {
+    // GIVEN
+    final ObjectNode variables = objectMapper.createObjectNode();
+    variables.put(INPUT_STRING_NAME, INPUT_STRING_VALUE);
+
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(
+            "query ($input: String!) {"
+                + "    queryWithVariables(input: $input)"
+                + "}",
+            variables
+        )
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_QUERY_WITH_VARIABLES)
+        .asString()
+        .isEqualTo(INPUT_STRING_VALUE);
+  }
+
+  @Test
+  @DisplayName("Test postForString with Map variables.")
+  void testPostForStringWithMapVariables() throws IOException {
+    // GIVEN
+    final Map<String, Object> variables = new LinkedHashMap<>();
+    variables.put(INPUT_STRING_NAME, INPUT_STRING_VALUE);
+
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(
+            "query ($input: String!) {"
+                + "    queryWithVariables(input: $input)"
+                + "}",
+            variables
+        )
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_QUERY_WITH_VARIABLES)
+        .asString()
+        .isEqualTo(INPUT_STRING_VALUE);
+  }
+
+  @Test
+  @DisplayName("Test postForString with embedded operation name and variables.")
+  void testPostForStringWithEmbeddedOperationNameAndVariables() throws IOException {
+    // GIVEN
+    final ObjectNode variables = objectMapper.createObjectNode();
+    variables.put(INPUT_STRING_NAME, INPUT_STRING_VALUE);
+
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(
+            "query TestOperationYo ($input: String!) {"
+                + "    queryWithVariables(input: $input)"
+                + "}",
+            variables
+        )
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_QUERY_WITH_VARIABLES)
+        .asString()
+        .isEqualTo(INPUT_STRING_VALUE);
+  }
+
+  @Test
+  @DisplayName("Test postForString with explicit operation name and ObjectNode variables.")
+  void testPostForStringWithExplicitOperationNameAndObjectNodeVariables() throws IOException {
+    // GIVEN
+    final ObjectNode variables = objectMapper.createObjectNode();
+    variables.put(INPUT_STRING_NAME, INPUT_STRING_VALUE);
+
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(
+            "query TestOperationYo ($input: String!) {"
+                + "    queryWithVariables(input: $input)"
+                + "}",
+            "TestOperationYo",
+            variables
+        )
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_QUERY_WITH_VARIABLES)
+        .asString()
+        .isEqualTo(INPUT_STRING_VALUE);
+  }
+
+  @Test
+  @DisplayName("Test postForString with explicit operation name and Map variables.")
+  void testPostForStringWithExplicitOperationNameAndMapVariables() throws IOException {
+    // GIVEN
+    final Map<String, Object> variables = new LinkedHashMap<>();
+    variables.put(INPUT_STRING_NAME, INPUT_STRING_VALUE);
+
+    // WHEN - THEN
+    graphQLTestTemplate
+        .postForString(
+            "query TestOperationYo ($input: String!) {"
+                + "    queryWithVariables(input: $input)"
+                + "}",
+            "TestOperationYo",
+            variables
+        )
+        .assertThatNoErrorsArePresent()
+        .assertThatField(DATA_FIELD_QUERY_WITH_VARIABLES)
+        .asString()
+        .isEqualTo(INPUT_STRING_VALUE);
+  }
+
+  @Test
+  @DisplayName("Test postForString with null string.")
+  void testPostStringWithNullString() {
+    // GIVEN
+    final String graphql = null;
+
+    // WHEN - THEN
+    assertThrows(NullPointerException.class, () -> {
+        graphQLTestTemplate.postForString(graphql);
+    });
   }
 }
