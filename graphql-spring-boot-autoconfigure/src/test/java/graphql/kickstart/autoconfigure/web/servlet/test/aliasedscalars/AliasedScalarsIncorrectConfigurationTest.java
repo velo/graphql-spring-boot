@@ -34,9 +34,9 @@ class AliasedScalarsIncorrectConfigurationTest {
             "Scalar(s) 'BugDecimal' cannot be aliased."
                 + " Only the following scalars can be aliased by configuration: BigDecimal,"
                 + " BigInteger, Boolean, Byte, Char, Date, DateTime, Float, ID, Int, JSON,"
-                + " Locale, Long, NegativeFloat, NegativeInt, NonNegativeFloat, NonNegativeInt,"
+                + " LocalTime, Locale, Long, NegativeFloat, NegativeInt, NonNegativeFloat, NonNegativeInt,"
                 + " NonPositiveFloat, NonPositiveInt, Object, PositiveFloat, PositiveInt, Short,"
-                + " String, Time, Url. Note that custom scalar beans cannot be aliased this way.");
+                + " String, Time, UUID, Url. Note that custom scalar beans cannot be aliased this way.");
   }
 
   @Test
