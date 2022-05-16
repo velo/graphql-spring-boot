@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -195,7 +196,7 @@ public abstract class GraphiQLController {
       String contextPath, @RequestParam Map<String, String> params) {
     String endpoint = graphiQLProperties.getEndpoint().getGraphql();
     for (Map.Entry<String, String> param : params.entrySet()) {
-      endpoint = endpoint.replaceAll("\\{" + param.getKey() + "}", param.getValue());
+      endpoint = endpoint.replaceAll("\\{" + Pattern.quote(param.getKey()) + "}", param.getValue());
     }
     if (StringUtils.isNotBlank(contextPath) && !endpoint.startsWith(contextPath)) {
       return contextPath + endpoint;
