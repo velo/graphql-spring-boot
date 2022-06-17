@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
@@ -112,7 +113,7 @@ public class VoyagerIndexHtmlTemplate {
       String contextPath, @RequestParam Map<String, String> params) {
     String endpoint = voyagerConfiguration.getEndpoint();
     for (Map.Entry<String, String> param : params.entrySet()) {
-      endpoint = endpoint.replaceAll("\\{" + param.getKey() + "}", param.getValue());
+      endpoint = endpoint.replaceAll("\\{" + Pattern.quote(param.getKey()) + "}", param.getValue());
     }
     if (StringUtils.isNotBlank(contextPath) && !endpoint.startsWith(contextPath)) {
       return contextPath + endpoint;

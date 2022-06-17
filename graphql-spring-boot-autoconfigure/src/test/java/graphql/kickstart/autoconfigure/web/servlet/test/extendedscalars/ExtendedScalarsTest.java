@@ -31,9 +31,9 @@ class ExtendedScalarsTest {
         .isThrownBy(application::run)
         .withMessage(
             "Invalid extended scalar name(s) found: BadDecimal, Datee. Valid names are: BigDecimal, "
-                + "BigInteger, Byte, Char, Date, DateTime, JSON, Locale, Long, NegativeFloat, NegativeInt, "
+                + "BigInteger, Byte, Char, Date, DateTime, JSON, LocalTime, Locale, Long, NegativeFloat, NegativeInt, "
                 + "NonNegativeFloat, NonNegativeInt, NonPositiveFloat, NonPositiveInt, Object, PositiveFloat, "
-                + "PositiveInt, Short, Time, Url.");
+                + "PositiveInt, Short, Time, UUID, Url.");
   }
 
   @Test
