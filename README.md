@@ -547,11 +547,10 @@ graphql:
   extended-scalars: BigDecimal, Date
 ```
 
-The available scalars are the following: `BigDecimal`, `BigInteger`, `Byte`, `Char`, `Date`
-, `DateTime`, `JSON`,
-`Locale`, `Long`, `NegativeFloat`, `NegativeInt`, `NonNegativeFloat`, `NonNegativeInt`
-, `NonPositiveFloat`,
-`NonPositiveInt`, `Object`, `PositiveFloat`, `PositiveInt`, `Short`, `Time`, `Url`.
+The available scalars are the following: `BigDecimal`, `BigInteger`, `Byte`, `Char`, `Date`, 
+`DateTime`, `JSON`, `LocalTime` *(since 13.0.0)*, `Locale`, `Long`, `NegativeFloat`, `NegativeInt`,
+`NonNegativeFloat`, `NonNegativeInt`, `NonPositiveFloat`,`NonPositiveInt`, `Object`, `PositiveFloat`,
+`PositiveInt`, `Short`, `Time`, `UUID` *(since 13.0.0)*, `Url`.
 
 This setting works with both the [GraphQL Java Tools](#graphql-java-tools) and the
 [GraphQL Annotations](#graphql-annotations) integration.
@@ -566,7 +565,7 @@ scalar Date
 
 ## Aliased scalars
 
-*Requires version 12.0.1 or greater*
+*Requires version 13.0.0 or greater*
 
 The starter also supports [aliased scalars](https://github.com/graphql-java/graphql-java-extended-scalars#alias-scalars).
 You can define aliases for any standard or extended scalar, as shown in the example below. Note that
