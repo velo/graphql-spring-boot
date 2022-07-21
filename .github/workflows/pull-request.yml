@@ -65,7 +65,7 @@ jobs:
         shell: cmd
         run: gradlew --info check
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always() && matrix.os != 'ubuntu-latest'
         with:
           files: '**/build/test-results/**/*.xml'
