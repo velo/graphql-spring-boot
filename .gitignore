@@ -69,3 +69,4 @@ fabric.properties
 
 **/node_modules
 **/.husky
+/projectFilesBackup/.idea/workspace.xml
