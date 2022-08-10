@@ -97,10 +97,10 @@ repositories {
 }
 
 dependencies {
-  implementation 'com.graphql-java-kickstart:graphql-spring-boot-starter:12.0.0'
+  implementation 'com.graphql-java-kickstart:graphql-spring-boot-starter:13.0.0'
   
   // testing facilities
-  testImplementation 'com.graphql-java-kickstart:graphql-spring-boot-starter-test:12.0.0'
+  testImplementation 'com.graphql-java-kickstart:graphql-spring-boot-starter-test:13.0.0'
 }
 ```
 
@@ -110,14 +110,14 @@ Maven:
 <dependency>
   <groupId>com.graphql-java-kickstart</groupId>
   <artifactId>graphql-spring-boot-starter</artifactId>
-  <version>12.0.0</version>
+  <version>13.0.0</version>
 </dependency>
 
 <!-- testing facilities -->
 <dependency>
 <groupId>com.graphql-java-kickstart</groupId>
 <artifactId>graphql-spring-boot-starter-test</artifactId>
-<version>12.0.0</version>
+<version>13.0.0</version>
 <scope>test</scope>
 </dependency>
 
