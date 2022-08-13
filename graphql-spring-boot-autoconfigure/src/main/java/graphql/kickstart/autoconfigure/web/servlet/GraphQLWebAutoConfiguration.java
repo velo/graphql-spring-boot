@@ -290,7 +290,8 @@ public class GraphQLWebAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnProperty(
-      value = "graphql.servlet.use-default-objectmapper",
+      prefix = "graphql.servlet",
+      name = "use-default-objectmapper",
       havingValue = "true",
       matchIfMissing = true)
   public ObjectMapperProvider objectMapperProvider(ObjectMapper objectMapper) {
@@ -314,10 +315,6 @@ public class GraphQLWebAutoConfiguration {
     Duration asyncTimeout =
         Optional.ofNullable(asyncServletProperties.getTimeout()) //
             .orElse(AsyncServletProperties.DEFAULT_TIMEOUT);
-    long asyncTimeoutMilliseconds =
-        Optional.ofNullable(graphQLServletProperties.getAsyncTimeout()) //
-            .orElse(asyncTimeout)
-            .toMillis();
     long subscriptionTimeoutMilliseconds =
         Optional.ofNullable(graphQLServletProperties.getSubscriptionTimeout()) //
             .orElse(GraphQLServletProperties.DEFAULT_SUBSCRIPTION_TIMEOUT)
@@ -330,7 +327,7 @@ public class GraphQLWebAutoConfiguration {
         .with(batchInputPreProcessor)
         .with(graphQLServletProperties.getContextSetting())
         .with(responseCacheManager)
-        .asyncTimeout(asyncTimeoutMilliseconds)
+        .asyncTimeout(asyncTimeout.toMillis())
         .with(asyncTaskDecorator)
         .asyncCorePoolSize(asyncServletProperties.getThreads().getMin())
         .asyncMaxPoolSize(asyncServletProperties.getThreads().getMax())
@@ -340,22 +337,14 @@ public class GraphQLWebAutoConfiguration {
 
   @Bean("graphqlAsyncTaskExecutor")
   @ConditionalOnMissingBean(name = "graphqlAsyncTaskExecutor")
+  @ConditionalOnProperty(prefix = "graphql.servlet.async", name = "enabled", havingValue = "true")
   public Executor threadPoolTaskExecutor() {
-    if (isAsyncModeEnabled()) {
-      ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-      executor.setCorePoolSize(asyncServletProperties.getThreads().getMin());
-      executor.setMaxPoolSize(asyncServletProperties.getThreads().getMax());
-      executor.setThreadNamePrefix(asyncServletProperties.getThreads().getNamePrefix());
-      executor.initialize();
-      return executor;
-    }
-    return null;
-  }
-
-  private boolean isAsyncModeEnabled() {
-    return graphQLServletProperties.getAsyncModeEnabled() != null
-        ? graphQLServletProperties.getAsyncModeEnabled()
-        : asyncServletProperties.isEnabled();
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(asyncServletProperties.getThreads().getMin());
+    executor.setMaxPoolSize(asyncServletProperties.getThreads().getMax());
+    executor.setThreadNamePrefix(asyncServletProperties.getThreads().getNamePrefix());
+    executor.initialize();
+    return executor;
   }
 
   @Bean
@@ -375,11 +364,7 @@ public class GraphQLWebAutoConfiguration {
     } else {
       registration.setMultipartConfig(new MultipartConfigElement(""));
     }
-    if (graphQLServletProperties.getAsyncModeEnabled() != null) {
-      registration.setAsyncSupported(graphQLServletProperties.getAsyncModeEnabled());
-    } else {
-      registration.setAsyncSupported(asyncServletProperties.isEnabled());
-    }
+    registration.setAsyncSupported(asyncServletProperties.isEnabled());
     return registration;
   }
 }
