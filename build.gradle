@@ -49,6 +49,8 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
+    ext['graphql-java.version'] = '19.1'
+
     repositories {
         mavenLocal()
         mavenCentral()
