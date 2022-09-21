@@ -86,7 +86,9 @@ public class AltairController {
   private boolean isJsSuffixAdded() {
     if (nonNull(altairProperties.getCdn().getVersion())) {
       String[] versionValues = altairProperties.getCdn().getVersion().split("\\.");
-      return isNumeric(versionValues[0]) && parseInt(versionValues[0]) >= 4;
+      return isNumeric(versionValues[0]) && parseInt(versionValues[0]) >= 4
+              // -es2018 version is not published for versions 4.2.0 onwards
+              && versionValues.length > 2 && isNumeric(versionValues[1]) && parseInt(versionValues[1]) < 2;
     }
     return false;
   }
